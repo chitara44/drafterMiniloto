@@ -2,6 +2,8 @@ import pandas as pd
 from itertools import combinations
 from statistics import median
 import os
+import subprocess
+import shutil
 
 # Leer los datos desde el archivo CSV sin encabezados
 df = pd.read_csv('data.csv', header=None, names=['IdSorteo', 'N1', 'N2', 'N3', 'N4', 'N5'])
@@ -171,6 +173,30 @@ def proceso_completo(df_original):
 
     return pd.DataFrame(resultados_comparacion)
 
+try:
+    script_path = 'C:\\desarrollo\\whole_project\\webScrapperMiloto\\scraper\\requester.py'
+    result = subprocess.run(['python', script_path, '1', '190'], capture_output=True, text=True)
+    print("This is the resul of result" + str(result) + " | " )
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    source_path = 'C:\\desarrollo\\whole_project\\webScrapperMiloto\\scraper\\data.csv'
+    destiny_path = current_directory + '\\data.csv'
+    print("source: " + source_path)
+    print("destiny: " + destiny_path)
+    shutil.copy(source_path, destiny_path)
+
+except subprocess.CalledProcessError as e:
+    # Manejar errores de ejecución del script
+    print(f"Error al ejecutar el script: {e}")
+    print(f"Salida del error: {e.output}")
+
+except FileNotFoundError as e:
+    # Manejar si el archivo no es encontrado
+    print(f"Archivo no encontrado: {e}")
+
+except Exception as e:
+    # Capturar cualquier otro error general
+    print(f"Ocurrió un error inesperado: {e}")
+
 # Llamada a la función para ejecutar el proceso completo
 df_resultados_comparacion = proceso_completo(df)
-df_resultados_comparacion.to_csv('resultados_comparacion.csv', index=False)
+df_resultados_comparacion.to_csv('comparing_results.csv', index=False)
