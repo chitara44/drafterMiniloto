@@ -4,6 +4,7 @@ from statistics import median
 import os
 import subprocess
 import shutil
+import sys
 
 # Leer los datos desde el archivo CSV sin encabezados
 df = pd.read_csv('data.csv', header=None, names=['IdSorteo', 'N1', 'N2', 'N3', 'N4', 'N5'])
@@ -89,7 +90,6 @@ def cargar_prospectos(metodo_calculo, id_sorteo):
     filename = f'prospectos_{id_sorteo}_{metodo_calculo}.csv'
     try:
         df_prospectos = pd.read_csv(filename)
-        print(f'Prospectos cargados desde {filename}')
         return df_prospectos
     except FileNotFoundError:
         print(f'No se encontraron prospectos previos para {metodo_calculo}')
@@ -123,25 +123,29 @@ def comparar_prospectos_con_resultados(df_sorteo, df_prospectos, lastdraft):
     }
 
 # Proceso iterativo de generación de prospectos y comparación
-def proceso_completo(df_original):
+def proceso_completo(df_original, finalDraft):
     resultados_comparacion = []
 
     # Ordenar por IdSorteo para procesar secuencialmente
     df_sorteos_ordenados = df_original.sort_values(by='IdSorteo')
-
+    print("finalDraft")
+    print(finalDraft)
     # Iterar desde el segundo sorteo para poder comparar con el anterior
-    for idx in range(10, len(df_sorteos_ordenados) + 1):
+    for idx in range(10, finalDraft):
+        print("idx")
+        print(idx)
         # Obtener los sorteos hasta el sorteo anterior
         df_previos = df_sorteos_ordenados.iloc[:idx]
         id_sorteo = len(df_sorteos_ordenados) + 1
         if idx < len(df_sorteos_ordenados):
             id_sorteo = df_sorteos_ordenados.iloc[idx]['IdSorteo']
-        print(id_sorteo)
+        # print(id_sorteo)
         
         # Calcular intervalos y generar prospectos basados en los sorteos previos
         resultados_numeros = calcular_intervalos(df_previos, ['N1', 'N2', 'N3', 'N4', 'N5'])
 
         # Cargar prospectos guardados previamente o generar nuevos si no existen
+        print(f'Cargando prospectos para sorteo: ' + str(id_sorteo))
         df_prospectos_fusion = cargar_prospectos('Fusión', id_sorteo)
         df_prospectos_promedio = cargar_prospectos('Promedio', id_sorteo)
         df_prospectos_mediana = cargar_prospectos('Mediana', id_sorteo)
@@ -174,9 +178,13 @@ def proceso_completo(df_original):
     return pd.DataFrame(resultados_comparacion)
 
 try:
+    print("About to start")
+    initialDraft = str(sys.argv[1])
+    finalDraft = str(sys.argv[2])
+    print( "Initial number: ", initialDraft, " Final number: ", finalDraft)
     script_path = 'C:\\desarrollo\\whole_project\\webScrapperMiloto\\scraper\\requester.py'
-    result = subprocess.run(['python', script_path, '1', '190'], capture_output=True, text=True)
-    print("This is the resul of result" + str(result) + " | " )
+    result = subprocess.run(['python', script_path, initialDraft, finalDraft], capture_output=True, text=True)
+    print("This is the result of result" + str(result) + " | " )
     current_directory = os.path.dirname(os.path.abspath(__file__))
     source_path = 'C:\\desarrollo\\whole_project\\webScrapperMiloto\\scraper\\data.csv'
     destiny_path = current_directory + '\\data.csv'
@@ -198,5 +206,5 @@ except Exception as e:
     print(f"Ocurrió un error inesperado: {e}")
 
 # Llamada a la función para ejecutar el proceso completo
-df_resultados_comparacion = proceso_completo(df)
+df_resultados_comparacion = proceso_completo(df, int(finalDraft))
 df_resultados_comparacion.to_csv('comparing_results.csv', index=False)
